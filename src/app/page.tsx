@@ -1,103 +1,111 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { scrapeBlogText, generateSummary, translateToUrdu } from "@/lib/blogProcessor"
+import { motion } from "framer-motion"
+
+export default function HomePage() {
+  const [url, setUrl] = useState("")
+  const [summary, setSummary] = useState("")
+  const [urduSummary, setUrduSummary] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+
+  const fullText = scrapeBlogText(url)
+  const summaryResult = generateSummary(fullText)
+  const urduResult = await translateToUrdu(summaryResult)
+
+  setSummary(summaryResult)
+  setUrduSummary(urduResult)
+
+  // ✅ Save summary to Supabase
+  await fetch("/api/save-summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url,
+      summary: summaryResult,
+      urdu_translation: urduResult,
+    }),
+  })
+
+  setLoading(false)
+}
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen bg-gradient-to-br from-[#043B4C] via-[#075E54] to-[#0B766C] flex items-center justify-center px-4 py-10">
+      <motion.div
+        className="w-full max-w-3xl"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <Card className="p-8 rounded-3xl shadow-2xl backdrop-blur-sm bg-white/90">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold text-teal-800 mb-2 tracking-tight">
+              ✨ AI Blog Summariser
+            </h1>
+            <p className="text-sm text-gray-600 mb-6">
+              Paste any blog URL to get a smart AI-powered summary in English & Urdu.
+            </p>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Input
+              type="text"
+              placeholder="e.g. https://medium.com/@someone/blog-post"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="ring-2 ring-teal-500 focus:ring-blue-500 transition-all text-sm"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-teal-600 to-blue-600 hover:scale-105 transition-all duration-300 text-white font-medium text-base py-2.5"
+              disabled={loading}
+            >
+              {loading ? "Summarising..." : "Summarise Blog"}
+            </Button>
+          </form>
+
+          {error && (
+            <p className="text-red-600 mt-3 text-center text-sm">{error}</p>
+          )}
+        </Card>
+
+        {(summary || urduSummary) && (
+          <motion.div
+            className="mt-10 space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+            {summary && (
+              <Card className="bg-white/90 rounded-2xl shadow-lg border-l-4 border-blue-500">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-bold text-blue-700 mb-2">📝 English Summary</h2>
+                  <p className="text-gray-700 leading-relaxed">{summary}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {urduSummary && (
+              <Card className="bg-white/90 rounded-2xl shadow-lg border-l-4 border-green-500">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-bold text-green-700 mb-2">🌐 Urdu Translation</h2>
+                  <p className="text-gray-800 leading-relaxed font-noto">{urduSummary}</p>
+                </CardContent>
+              </Card>
+            )}
+          </motion.div>
+        )}
+      </motion.div>
+    </main>
+  )
 }
