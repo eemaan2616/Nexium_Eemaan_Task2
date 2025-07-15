@@ -15,29 +15,34 @@ export default function HomePage() {
   const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setLoading(true)
+    e.preventDefault()
+    setLoading(true)
+    setError("")
 
-  const fullText = scrapeBlogText(url)
-  const summaryResult = generateSummary(fullText)
-  const urduResult = await translateToUrdu(summaryResult)
+    try {
+      const fullText = scrapeBlogText(url)
+      const summaryResult = generateSummary(fullText)
+      const urduResult = await translateToUrdu(summaryResult)
 
-  setSummary(summaryResult)
-  setUrduSummary(urduResult)
+      setSummary(summaryResult)
+      setUrduSummary(urduResult)
 
-  // ✅ Save summary to Supabase
-  await fetch("/api/save-summary", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      url,
-      summary: summaryResult,
-      urdu_translation: urduResult,
-    }),
-  })
-
-  setLoading(false)
-}
+      await fetch("/api/save-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          summary: summaryResult,
+          urdu_translation: urduResult,
+        }),
+      })
+    } catch (err) {
+      console.error("❌ Summarising failed:", err)
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#043B4C] via-[#075E54] to-[#0B766C] flex items-center justify-center px-4 py-10">

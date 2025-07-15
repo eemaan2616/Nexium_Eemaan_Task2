@@ -1,5 +1,3 @@
-import axios from "axios"
-
 /**
  * Simulates blog scraping based on the input URL.
  * In production, this would fetch and parse actual blog HTML content.
@@ -7,7 +5,6 @@ import axios from "axios"
 export function scrapeBlogText(url: string): string {
   console.log("🔍 Scraping blog from:", url);
 
-  // Simulate different dummy content based on domain
   if (url.includes("medium")) {
     return `
       Working from home has become a common trend in the tech industry. Many developers struggle to stay productive without structured office environments.
@@ -23,7 +20,6 @@ export function scrapeBlogText(url: string): string {
     `;
   }
 
-  // Fallback generic content if domain isn't recognized
   return `
     This is simulated blog content fetched from: ${url}
     Blog scraping is in progress. Real blog content would be extracted and summarized here in a real-world app.
@@ -32,7 +28,6 @@ export function scrapeBlogText(url: string): string {
 
 /**
  * Generates a basic summary from blog content.
- * For now, it just takes the first 3 non-empty sentences.
  */
 export function generateSummary(fullText: string): string {
   const sentences = fullText
@@ -40,13 +35,11 @@ export function generateSummary(fullText: string): string {
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-  const summary = sentences.slice(0, 3).join('. ') + '.';
-  return summary;
+  return sentences.slice(0, 3).join('. ') + '.';
 }
 
 /**
- * Uses LibreTranslate to convert English summary to Urdu.
- * This makes the summarizer generic and AI-powered.
+ * Calls /api/translate which uses LibreTranslate to convert English to Urdu.
  */
 export async function translateToUrdu(summary: string): Promise<string> {
   try {
